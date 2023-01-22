@@ -31,6 +31,7 @@ public class ApiTest {
         given()
                 .contentType("application/x-www-form-urlencoded; charset=UTF-8")
                 .formParams(data)
+                .when()
                 .post("/addproducttocart/details/2/1")
                 .then()
                 .statusCode(200)
