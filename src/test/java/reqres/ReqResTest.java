@@ -1,42 +1,55 @@
 package reqres;
 
-import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import reqres.pojo.CreateUserRequestModel;
+import reqres.pojo.CreateUserResponseModel;
+import reqres.pojo.GetUserResponseModel;
+import reqres.pojo.LoginUserRequestModel;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
+import static io.restassured.RestAssured.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static reqres.Specs.requestSpec;
+import static reqres.Specs.responseSpec;
 
 public class ReqResTest {
 
     @BeforeAll
     static void beforeClass() {
-        RestAssured.baseURI = "https://reqres.in";
+        requestSpecification = requestSpec();
+        responseSpecification = responseSpec();
     }
 
     @Test
     void getUserTest() {
-        given()
-                .get("/api/users/2")
-                .then()
-                .statusCode(200)
-                .body(
-                        "data.id", is(2),
-                        "data.email", is("janet.weaver@reqres.in")
-                );
+       GetUserResponseModel response =
+                given()
+                        .get("/users/2")
+                        .then()
+                        .statusCode(200)
+                        .extract().as(GetUserResponseModel.class);
+
+        assertThat(response.getData().getId()).isEqualTo("2");
+        assertThat(response.getData().getEmail()).isEqualTo("janet.weaver@reqres.in");
+        assertThat(response.getData().getFirstName()).isEqualTo("Janet");
+        assertThat(response.getData().getLastName()).isEqualTo("Weaver");
+        assertThat(response.getData().getAvatar()).isEqualTo("https://reqres.in/img/faces/2-image.jpg");
+
     }
 
     @Test
     void successfulLoginUserTest() {
-        String data = "{ \"email\": \"eve.holt@reqres.in\", \"password\": \"cityslicka\" }";
+        LoginUserRequestModel body = LoginUserRequestModel.builder()
+                .email("eve.holt@reqres.in")
+                .password("cityslicka")
+                .build();
 
         given()
-                .contentType(JSON)
-                .body(data)
+                .body(body)
                 .when()
-                .post("/api/login")
+                .post("/login")
                 .then()
                 .statusCode(200)
                 .body("token", notNullValue());
@@ -44,13 +57,15 @@ public class ReqResTest {
 
     @Test
     void unsuccessfulLoginUserTest() {
-        String data = "{ \"email\": \"eve.holt@reqres.in\"}";
+        LoginUserRequestModel body = LoginUserRequestModel.builder()
+                .email("eve.holt@reqres.in")
+                .password("")
+                .build();
 
         given()
-                .contentType(JSON)
-                .body(data)
+                .body(body)
                 .when()
-                .post("/api/login")
+                .post("/login")
                 .then()
                 .statusCode(400)
                 .body("error", is("Missing password"));
@@ -58,26 +73,29 @@ public class ReqResTest {
 
     @Test
     void createUserTest() {
-        String data = "{ \"name\": \"pavel\", \"job\": \"student\" }";
+        CreateUserRequestModel body = CreateUserRequestModel.builder()
+                .name("pavel")
+                .job("student")
+                .build();
 
-        given()
-                .contentType(JSON)
-                .body(data)
-                .when()
-                .post("/api/users")
-                .then()
-                .statusCode(201)
-                .body(
-                        "name", is("pavel"),
-                        "job", is("student"),
-                        "id", notNullValue()
-                );
+        CreateUserResponseModel response =
+                given()
+                        .body(body)
+                        .when()
+                        .post("/users")
+                        .then()
+                        .statusCode(201)
+                        .extract().as(CreateUserResponseModel.class);
+
+        assertThat(response.getName()).isEqualTo(body.getName());
+        assertThat(response.getJob()).isEqualTo(body.getJob());
+        assertThat(response.getId()).isNotNull();
     }
 
     @Test
     void deleteUserTest() {
         given()
-                .delete("/api/users/2")
+                .delete("/users/2")
                 .then()
                 .statusCode(204);
     }

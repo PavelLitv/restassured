@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id "io.franzbecker.gradle-lombok" version "5.0.0"
+    id 'io.qameta.allure' version '2.10.0'
 }
 
 group 'li.pavel'
@@ -9,15 +11,36 @@ repositories {
     mavenCentral()
 }
 
+def allureVersion = "2.19.0",
+    assertJVersion = "3.24.2",
+    slf4jVersion = "1.7.32"
+
+allure {
+    report {
+        version.set(allureVersion)
+    }
+    adapter {
+        aspectjWeaver.set(true)
+        frameworks {
+            junit5 {
+                adapterVersion.set(allureVersion)
+            }
+        }
+    }
+}
+
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
 dependencies {
     testImplementation (
-            'org.junit.jupiter:junit-jupiter:5.9.0',
-            'io.rest-assured:rest-assured:5.3.0',
-            "org.slf4j:slf4j-simple:1.7.36"
+            "org.junit.jupiter:junit-jupiter:5.9.0",
+            "io.rest-assured:rest-assured:5.3.0",
+            "io.qameta.allure:allure-rest-assured:$allureVersion",
+            "org.assertj:assertj-core:$assertJVersion",
+            "com.fasterxml.jackson.core:jackson-databind:2.14.1",
+            "org.slf4j:slf4j-simple:$slf4jVersion"
     )
 }
 
